@@ -11,8 +11,34 @@ import UIKit
 class ItemsViewController: UITableViewController {
     
     var itemStore: ItemStore!
+    var imageStore: ImageStore!
     
-    @IBAction func addNewItem(_ sender: UIButton) {
+    //MARK: - Initializers
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        navigationItem.leftBarButtonItem = editButtonItem
+    }
+    
+    //MARK: - View life cycle
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        tableView.rowHeight = UITableViewAutomaticDimension
+        tableView.estimatedRowHeight = 65
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        tableView.reloadData()
+    }
+    
+    //MARK: - Actions
+    
+    @IBAction func addNewItem(_ sender: AnyObject) {
         // Create a new Item and add it to the store
         let newItem = itemStore.createItem()
         
@@ -25,55 +51,32 @@ class ItemsViewController: UITableViewController {
         }
     }
     
-    @IBAction func toggleEditingMode(_ sender: UIButton) {
-        // If you are currently in editing mode...
-        if isEditing {
-            // Change text of button to inform user of state
-            sender.setTitle("Edit", for: .normal)
-            
-            // Turn off editing mode
-            setEditing(false, animated: true)
-        } else {
-            // Change text of button to inform user of state
-            sender.setTitle("Done", for: .normal)
-            
-            // Enter editing mode
-            setEditing(true, animated: true)
-        }
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        // Get the height of the status bar
-        let statusBarHeight = UIApplication.shared.statusBarFrame.height
-        
-        let insets = UIEdgeInsets(top: statusBarHeight, left: 0, bottom: 0, right: 0)
-        tableView.contentInset = insets
-        tableView.scrollIndicatorInsets = insets
-        
-        tableView.rowHeight = UITableViewAutomaticDimension
-        tableView.estimatedRowHeight = 65
-
-    }
-    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // If the triggered segue is the "showItem" segue
+        // If the triggered segue is the "ShowItem" segue
+        
+        
         switch segue.identifier {
         case "showItem"?:
+            break
+        default:
+            preconditionFailure("Unexpected segue identifier.")
+        }
+        
+        if segue.identifier == "showItem" {
+            
             // Figure out which row was just tapped
             if let row = tableView.indexPathForSelectedRow?.row {
                 
                 // Get the item associated with this row and pass it along
                 let item = itemStore.allItems[row]
-                let detailViewController
-                    = segue.destination as! DetailViewController
+                let detailViewController = segue.destination as! DetailViewController
                 detailViewController.item = item
+                detailViewController.imageStore = imageStore
             }
-        default:
-            preconditionFailure("Unexpected segue identifier.")
         }
     }
+    
+    //MARK: - UITableViewDataSource methods
     
     override func tableView(_ tableView: UITableView,
                             moveRowAt sourceIndexPath: IndexPath,
@@ -104,6 +107,9 @@ class ItemsViewController: UITableViewController {
                                              handler: { (action) -> Void in
                                                 // Remove the item from the store
                                                 self.itemStore.removeItem(item)
+                                                
+                                                // Remove the item's image from the image store
+                                                self.imageStore.deleteImage(forKey: item.itemKey)
                                                 
                                                 // Also remove that row from the table view with an animation
                                                 self.tableView.deleteRows(at: [indexPath], with: .automatic)
@@ -136,5 +142,4 @@ class ItemsViewController: UITableViewController {
         
         return cell
     }
-    
 }
